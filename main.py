@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
 app = FastAPI()
 
