@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        textarea { width: 80%; height: 100px; margin: 10px 0; }
+        button { padding: 10px 20px; font-size: 16px; }
+        #chat-history { margin-top: 20px; width: 80%; text-align: left; }
+        .message { padding: 10px; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>DeepSeek Chat</h1>
+    <form method="post" action="/generate/">
+        <textarea name="user_input" placeholder="Enter your message..."></textarea><br>
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="chat-history">
+        {% for message in messages %}
+            <div class="message"><strong>{{ message.role.capitalize() }}:</strong> {{ message.content }}</div>
+        {% endfor %}
+    </div>
+</body>
+</html>

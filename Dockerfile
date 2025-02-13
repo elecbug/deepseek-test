@@ -7,14 +7,19 @@ RUN apt-get update && \
 RUN mkdir /app
 WORKDIR /app
 
-RUN git lfs install
-RUN git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-chat
+RUN GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://huggingface.co/deepseek-ai/deepseek-llm-7b-chat
+
+WORKDIR /app/deepseek-llm-7b-chat
+RUN git lfs fetch --include="*" --exclude=""
+RUN git lfs checkout
+
+WORKDIR /app
 
 RUN python3 -m venv venv
 RUN /app/venv/bin/pip install --upgrade pip
-RUN /app/venv/bin/pip install fastapi uvicorn torch transformers accelerate
-RUN /app/venv/bin/pip install python-multipart pydantic
+RUN /app/venv/bin/pip install fastapi uvicorn torch transformers accelerate python-multipart pydantic
 
+COPY templates templates
 COPY main.py main.py
 
 CMD ["/app/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
