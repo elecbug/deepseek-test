@@ -6,7 +6,7 @@ app = FastAPI()
 
 device = "cpu"
 
-model_path = "/app/deepseek-llm-7b-base"
+model_path = "/app/deepseek-llm-7b-chat"
 
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32)
