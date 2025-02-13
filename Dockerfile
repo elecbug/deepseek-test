@@ -3,8 +3,7 @@ FROM ubuntu:latest
 RUN apt-get update --fix-missing && \
     apt-get install -y python3 python3-venv git-lfs
 
-RUN git lfs install
-RUN git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-base
+COPY deepseek-llm-7b-base deepseek-llm-7b-base
 
 RUN mkdir /app
 WORKDIR /app
