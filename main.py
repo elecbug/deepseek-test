@@ -15,8 +15,8 @@ model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float
 model = model.to(device)
 
 @app.post("/generate/")
-async def generate(prompt: str):
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+async def generate(messages: list):
+    inputs = tokenizer.apply_chat_template(messages, return_tensors="pt").to(device)
     outputs = model.generate(
         **inputs,
         max_length=50, 

@@ -5,9 +5,10 @@ apt:
 build:
 	sudo docker build -t ds .
 run:
-	sudo docker run -dit --name ds -p 8000:80 --env WORKERS=2 ds
+	sudo docker run -dit --name ds -p 80:8000 --env WORKERS=1 ds
 stop:
 	sudo docker stop ds
 	sudo docker rm ds
 log:
 	sudo docker logs ds
+	sudo docker ps
