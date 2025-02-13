@@ -1,6 +1,6 @@
 apt:
 	sudo apt-get update
-	sudo apt-get install git docker.io git-lfs python3 python3-venv
+	sudo apt-get install -y git git-lfs docker.io python3 python3-venv || true
 download:
 	git lfs install
 	git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-base
