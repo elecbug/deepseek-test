@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-RUN apt-get update --fix-missing && \
+RUN apt-get update && \
     apt-get install -y python3 python3-venv git-lfs
 
 COPY deepseek-llm-7b-base deepseek-llm-7b-base
