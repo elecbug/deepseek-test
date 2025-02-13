@@ -18,6 +18,11 @@ WORKDIR /app
 RUN python3 -m venv venv
 RUN /app/venv/bin/pip install --upgrade pip
 RUN /app/venv/bin/pip install fastapi uvicorn torch transformers accelerate python-multipart pydantic
+RUN /app/venv/bin/pip install -U bitsandbytes
+RUN /app/venv/bin/pip install torchvision torchaudio
+
+RUN apt-get install -y gcc g++ make libnvidia-compute-470-server
+RUN apt-get install -y python3.12-dev
 
 COPY templates templates
 COPY main.py main.py

@@ -3,7 +3,7 @@ from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 app = FastAPI()
 
@@ -15,14 +15,17 @@ model_path = "/app/deepseek-llm-7b-chat"
 offload_path = "/app/offload"
 
 torch.backends.cuda.matmul.allow_tf32 = True
-
 tokenizer = AutoTokenizer.from_pretrained(model_path)
+quantization_config = BitsAndBytesConfig(load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True)
+
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    torch_dtype=torch.bfloat16,
+    torch_dtype=torch.float16,
     device_map="auto",
-    offload_folder=offload_path
+    offload_folder=offload_path,
+    quantization_config=quantization_config
 )
+model = torch.compile(model)
 
 user_sessions = {}
 
@@ -43,8 +46,8 @@ async def generate(request: Request, user_input: str = Form(...), session_id: st
     outputs = model.generate(
         input_ids=chat_prompt,
         attention_mask=attention_mask,
-        max_length=256,
         num_beams=4,
+        max_new_tokens=30,
         do_sample=True,
         temperature=0.7,
         top_p=0.9,
