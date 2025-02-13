@@ -8,7 +8,7 @@ download:
 build:
 	sudo docker build -t ds .
 run:
-	sudo docker run -dit --name ds --port 8000:80 ds
+	sudo docker run -dit --name ds -p 8000:80 ds
 stop:
 	sudo docker stop ds
 	sudo docker rm ds
