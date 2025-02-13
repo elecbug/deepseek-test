@@ -12,7 +12,7 @@ RUN git clone https://huggingface.co/deepseek-ai/deepseek-llm-7b-chat
 
 RUN python3 -m venv venv
 RUN /app/venv/bin/pip install --upgrade pip
-RUN /app/venv/bin/pip install fastapi uvicorn torch transformers
+RUN /app/venv/bin/pip install fastapi uvicorn torch transformers accelerate
 
 COPY main.py main.py
 
