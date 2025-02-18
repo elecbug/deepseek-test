@@ -1,8 +1,12 @@
-FROM ubuntu:latest
-ENV WORKERS=1
+FROM ubuntu:22.04
 
-RUN apt-get update && \
-    apt-get install -y python3 python3-venv git-lfs
+RUN apt-get update
+RUN apt-get install -y python3 python3-venv python3-dev git-lfs
+RUN apt-get install -y software-properties-common
+
+RUN add-apt-repository ppa:graphics-drivers/ppa -y
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nvidia-driver-535
 
 RUN mkdir /app
 WORKDIR /app
@@ -16,15 +20,15 @@ RUN git lfs checkout
 WORKDIR /app
 
 RUN python3 -m venv venv
-RUN /app/venv/bin/pip install --upgrade pip
-RUN /app/venv/bin/pip install fastapi uvicorn torch transformers accelerate python-multipart pydantic
-RUN /app/venv/bin/pip install -U bitsandbytes
-RUN /app/venv/bin/pip install torchvision torchaudio
+RUN /app/venv/bin/pip install --upgrade pip setuptools
 
-RUN apt-get install -y gcc g++ make libnvidia-compute-470-server
-RUN apt-get install -y python3.12-dev
+RUN /app/venv/bin/pip install torch torchvision torchaudio
+RUN /app/venv/bin/pip install fastapi uvicorn transformers accelerate python-multipart pydantic
+RUN /app/venv/bin/pip install -U bitsandbytes
+
+RUN /app/venv/bin/python --version
 
 COPY templates templates
 COPY main.py main.py
 
-CMD ["/app/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/app/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

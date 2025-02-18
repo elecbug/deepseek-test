@@ -3,29 +3,32 @@ from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = FastAPI()
 
 # app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Titan RTX (G102) 맞춤 설정
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_path = "/app/deepseek-llm-7b-chat"
 offload_path = "/app/offload"
 
-torch.backends.cuda.matmul.allow_tf32 = True
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-quantization_config = BitsAndBytesConfig(load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True)
+torch.backends.cuda.matmul.allow_tf32 = True  # TF32 연산 활성화 (Volta 이상에서 최적화됨)
 
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+# 8bit 대신 FP16 사용 (Titan RTX는 Ampere 이전 아키텍처이므로 8bit 효율이 낮음)
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    torch_dtype=torch.float16,
+    torch_dtype=torch.float16,  # FP16 사용
     device_map="auto",
     offload_folder=offload_path,
-    quantization_config=quantization_config
 )
-model = torch.compile(model)
+
+# CUDA 그래프 최적화 적용 (권장)
+model = torch.compile(model, mode="reduce-overhead")
 
 user_sessions = {}
 

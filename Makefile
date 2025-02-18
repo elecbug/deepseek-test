@@ -15,14 +15,14 @@ apt:
 build:
 	sudo docker build -t ds .
 run:
-	sudo docker run -dit --name ds -p 8000:8000 --env WORKERS=1 --gpus all ds
+	sudo docker run --name ds-app -p 8000:8000 --env WORKERS=1 --gpus all ds
 stop:
-	sudo docker stop ds
-	sudo docker rm ds
+	sudo docker stop ds-app
+	sudo docker rm ds-app
 log:
 	sudo docker logs ds
 	sudo docker ps
 	
 nvidia:
 	sudo docker info | grep -i runtime
-	sudo docker exec -it ds nvidia-smi
+	sudo docker exec -it ds-app nvidia-smi
