@@ -5,24 +5,177 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepSeek Chat</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
-        textarea { width: 80%; height: 100px; margin: 10px 0; }
-        button { padding: 10px 20px; font-size: 16px; }
-        #chat-history { margin-top: 20px; width: 80%; text-align: left; }
-        .message { padding: 10px; border-bottom: 1px solid #ddd; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f4f4f4; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        .chat-container {
+            width: 80%;
+            max-width: 600px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 20px;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 5px 0;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+        .assistant-message {
+            background: #e0e0e0;
+            color: black;
+            align-self: flex-start;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background: white;
+        }
+        textarea {
+            flex: 1;
+            height: 50px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: none;
+        }
+        button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .loading {
+            font-style: italic;
+            color: gray;
+        }
     </style>
 </head>
 <body>
-    <h1>DeepSeek Chat</h1>
-    <form method="post" action="/generate/">
-        <textarea name="user_input" placeholder="Enter your message..."></textarea><br>
-        <button type="submit">Send</button>
-    </form>
-
-    <div id="chat-history">
-        {% for message in messages %}
-            <div class="message"><strong>{{ message.role.capitalize() }}:</strong> {{ message.content }}</div>
-        {% endfor %}
+    <div class="chat-container">
+        <div class="chat-header">DeepSeek Chat</div>
+        <div id="chat-history" class="chat-history">
+            {% for message in messages %}
+                <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %}">
+                    <strong>{{ message.role.capitalize() }}:</strong> {{ message.content }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="chat-input">
+            <textarea id="user_input" placeholder="Enter your message..."></textarea>
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+        </div>
     </div>
+
+    <script>
+        function sendMessage() {
+            const userInput = document.getElementById("user_input").value.trim();
+            if (userInput === "") return;
+
+            const chatHistory = document.getElementById("chat-history");
+            const sendButton = document.getElementById("sendButton");
+            const textArea = document.getElementById("user_input");
+
+            // 사용자 메시지 화면에 추가
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.innerHTML = `<strong>User:</strong> ${userInput}`;
+            chatHistory.appendChild(userMessageDiv);
+
+            // 입력 필드 초기화 및 비활성화
+            textArea.value = "";
+            textArea.disabled = true;
+            sendButton.disabled = true;
+
+            // 로딩 메시지 추가
+            const loadingDiv = document.createElement("div");
+            loadingDiv.className = "message assistant-message loading";
+            loadingDiv.id = "loading-message";
+            loadingDiv.innerHTML = `<strong>Assistant:</strong> AI is typing...`;
+            chatHistory.appendChild(loadingDiv);
+
+            // 스크롤 자동 이동
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 서버로 메시지 전송
+            fetch("/generate/", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ user_input: userInput })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.text();
+            })
+            .then(html => {
+                // 서버 응답을 받아서 채팅 내용 업데이트
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, "text/html");
+                const newMessages = newDoc.querySelectorAll(".message");
+
+                // 기존 채팅 히스토리 지우고 새 메시지 삽입
+                chatHistory.innerHTML = "";
+                newMessages.forEach(msg => chatHistory.appendChild(msg));
+
+                // 스크롤 자동 이동
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                loadingDiv.innerHTML = `<strong>Assistant:</strong> ⚠️ Error occurred. Please try again.`;
+            })
+            .finally(() => {
+                // 입력 필드와 버튼 다시 활성화
+                textArea.disabled = false;
+                sendButton.disabled = false;
+
+                // 로딩 메시지 제거
+                const loadingMsg = document.getElementById("loading-message");
+                if (loadingMsg) {
+                    loadingMsg.remove();
+                }
+            });
+        }
+    </script>
 </body>
 </html>
