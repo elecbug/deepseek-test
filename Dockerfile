@@ -31,4 +31,5 @@ RUN /app/venv/bin/python --version
 COPY templates templates
 COPY main.py main.py
 
-ENTRYPOINT ["/app/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "-c", "TORCH_USE_CUDA_DSA=1 /app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000"]
+

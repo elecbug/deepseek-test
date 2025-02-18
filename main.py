@@ -6,29 +6,31 @@ from fastapi.templating import Jinja2Templates
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = FastAPI()
-
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Titan RTX (G102) 맞춤 설정
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_path = "/app/deepseek-llm-7b-chat"
 offload_path = "/app/offload"
 
-torch.backends.cuda.matmul.allow_tf32 = True  # TF32 연산 활성화 (Volta 이상에서 최적화됨)
+torch.backends.cuda.matmul.allow_tf32 = True
 
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-# 8bit 대신 FP16 사용 (Titan RTX는 Ampere 이전 아키텍처이므로 8bit 효율이 낮음)
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    torch_dtype=torch.float16,  # FP16 사용
+    torch_dtype=torch.bfloat16,  # 🚀 Titan RTX FP16 대신 bfloat16 적용
     device_map="auto",
     offload_folder=offload_path,
 )
 
-# CUDA 그래프 최적화 적용 (권장)
-model = torch.compile(model, mode="reduce-overhead")
+# 🚨 입력 검증 추가
+def check_tensor(tensor, name="Tensor"):
+    if torch.isnan(tensor).any():
+        raise ValueError(f"⚠️ {name} contains NaN values!")
+    if torch.isinf(tensor).any():
+        raise ValueError(f"⚠️ {name} contains Inf values!")
+    if tensor.numel() == 0:
+        raise ValueError(f"⚠️ {name} is empty!")
 
 user_sessions = {}
 
@@ -43,14 +45,20 @@ async def generate(request: Request, user_input: str = Form(...), session_id: st
 
     user_sessions[session_id].append({"role": "user", "content": user_input})
 
-    chat_prompt = tokenizer.apply_chat_template(user_sessions[session_id], return_tensors="pt").to(device)
+    # 🚨 `chat_prompt` 검증 추가
+    chat_prompt = tokenizer.apply_chat_template(user_sessions[session_id], return_tensors="pt")
+    
+    # CPU 상태에서 NaN, Inf 체크 후 `.to(device)`
+    check_tensor(chat_prompt, "chat_prompt")
+
+    chat_prompt = chat_prompt.to(device)
     attention_mask = torch.ones(chat_prompt.shape, dtype=torch.long).to(device)
 
     outputs = model.generate(
         input_ids=chat_prompt,
         attention_mask=attention_mask,
         num_beams=4,
-        max_new_tokens=30,
+        max_new_tokens=20,
         do_sample=True,
         temperature=0.7,
         top_p=0.9,
