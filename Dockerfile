@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y python3 python3-venv python3-dev git-lfs
+RUN apt-get install -y python3.10 python3.10-venv python3.10-dev git-lfs
 RUN apt-get install -y software-properties-common
 
 RUN add-apt-repository ppa:graphics-drivers/ppa -y
@@ -19,7 +19,7 @@ RUN git lfs checkout
 
 WORKDIR /app
 
-RUN python3 -m venv venv
+RUN python3.10 -m venv venv
 RUN /app/venv/bin/pip install --upgrade pip setuptools
 
 RUN /app/venv/bin/pip install torch torchvision torchaudio
